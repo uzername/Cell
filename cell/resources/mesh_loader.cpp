@@ -9,10 +9,11 @@
 #include "../shading/texture.h"
 
 #include <utility/logging/log.h>
-
+#ifdef USEASSIMP
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#endif
 
 namespace Cell
 {
@@ -29,21 +30,21 @@ namespace Cell
     SceneNode* MeshLoader::LoadMesh(Renderer *renderer, std::string path, bool setDefaultMaterial)
     {
         Log::Message("Loading mesh file at: " + path + ".", LOG_INIT);
-
+        #ifdef USEASSIMP
         Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
-
+        const aiScene*   scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
         if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
-            Log::Message("Assimp failed to load model at path: " + path, LOG_ERROR);   
+            Log::Message("Assimp failed to load model at path: " + path, LOG_ERROR);
             return nullptr;
         }
-
         std::string directory = path.substr(0, path.find_last_of("/"));
-
         Log::Message("Succesfully loaded: " + path + ".", LOG_INIT);
-
         return MeshLoader::processNode(renderer, scene->mRootNode, scene, directory, setDefaultMaterial);
+        #else 
+        Log::Message("We are not using ASSIMP. Enjoy your NULL", LOG_INIT);
+        return nullptr;
+        #endif // USEASSIMP
     }
     // --------------------------------------------------------------------------------------------
     SceneNode* MeshLoader::processNode(Renderer* renderer, aiNode* aNode, const aiScene* aScene, std::string directory, bool setDefaultMaterial)
@@ -52,7 +53,7 @@ namespace Cell
         // resource manager. The resource manager is responsible for holding the scene node 
         // pointer and deleting where appropriate.
         SceneNode* node = new SceneNode(0);
-
+        #ifdef USEASSIMP
         for (unsigned int i = 0; i < aNode->mNumMeshes; ++i)
         {
             math::vec3 boxMin, boxMax;
@@ -93,12 +94,15 @@ namespace Cell
         {
             node->AddChild(MeshLoader::processNode(renderer, aNode->mChildren[i], aScene, directory, setDefaultMaterial));
         }
-
+        #else
+        Log::Message("We are not using ASSIMP. Enjoy your NULL", LOG_INIT);
+        #endif // USEASSIMP
         return node;
     }
     // --------------------------------------------------------------------------------------------
     Mesh* MeshLoader::parseMesh(aiMesh* aMesh, const aiScene* aScene, math::vec3& out_Min, math::vec3& out_Max)
     {
+        #ifdef USEASSIMP
         std::vector<math::vec3> positions;
         std::vector<math::vec2> uv;
         std::vector<math::vec3> normals;
@@ -174,10 +178,15 @@ namespace Cell
         MeshLoader::meshStore.push_back(mesh);
 
         return mesh;
+        #else
+        Log::Message("MeshLoader::parseMesh. We are not using ASSIMP. Enjoy your NULL", LOG_INIT);
+        return nullptr;
+        #endif
     }
     // --------------------------------------------------------------------------------------------
     Material *MeshLoader::parseMaterial(Renderer* renderer, aiMaterial* aMaterial, const aiScene* aScene, std::string directory)
     {
+        #ifdef USEASSIMP
         // create a unique default material for each loaded mesh.     
         Material* material;
         // check if diffuse texture has alpha, if so: make alpha blend material; 
@@ -278,15 +287,26 @@ namespace Cell
         }     
 
         return material;
+        #else
+        Log::Message("MeshLoader::parseMaterial. We are not using ASSIMP. Enjoy your NULL", LOG_INIT);
+        return nullptr;
+        
+        #endif
     }
     // --------------------------------------------------------------------------------------------
     std::string MeshLoader::processPath(aiString *aPath, std::string directory)
     {
+        #ifdef USEASSIMP
         std::string path = std::string(aPath->C_Str());
         // parse path directly if path contains "/" indicating it is an absolute path;  otherwise 
         // parse as relative.
         if(path.find(":/") == std::string::npos || path.find(":\\") == std::string::npos)
             path = directory + "/" + path;
         return path;
+        #else
+        Log::Message("MeshLoader::processPath. We are not using ASSIMP. Enjoy your Empty String", LOG_INIT);
+        std::string path = "";
+        return path;
+        #endif
     }
 }

@@ -563,7 +563,7 @@ namespace Cell
         else
         {
             // float FLT_MAX = ;
-            io.MousePos = ImVec2(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+            io.MousePos = ImVec2(-(std::numeric_limits<float>::max)(), -(std::numeric_limits<float>::max)());
         }
 
         for (int i = 0; i < 3; i++)

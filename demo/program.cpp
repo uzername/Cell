@@ -142,9 +142,13 @@ int main(int argc, char *argv[])
     Cell::Material *customPostProcessing2 = renderer->CreatePostProcessingMaterial(postProcessing2);
 
     // mesh 
+    #ifdef USEASSIMP
     Cell::SceneNode* sponza = Cell::Resources::LoadMesh(renderer, "sponza", "meshes/sponza/sponza.obj");
     sponza->SetPosition(math::vec3(0.0, -1.0, 0.0));
     sponza->SetScale(0.01f);
+    #else
+    Log::Message("We are not using ASSIMP. Skipped loading Sponza", LOG_INIT);
+    #endif
 
     // lighting
     Cell::DirectionalLight dirLight;
@@ -314,7 +318,9 @@ int main(int argc, char *argv[])
         {
             //CLOCK(PUSH);
             renderer->PushRender(mainTorus);
+            #ifdef USEASSIMP
             renderer->PushRender(sponza);
+            #endif
             renderer->PushRender(plasmaOrb);
             renderer->PushRender(background);
         }
